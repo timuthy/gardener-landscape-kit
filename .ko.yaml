@@ -2,10 +2,10 @@ builds:
 - id: gardener-landscape-kit
   main: ./cmd/gardener-landscape-kit
   ldflags:
-  - -X {{.Env.PACKAGE_PATH}}/version.gitMajor={{.Env.MAJOR_VERSION}}
-  - -X {{.Env.PACKAGE_PATH}}/version.gitMinor={{.Env.MINOR_VERSION}}
-  - -X {{.Env.PACKAGE_PATH}}/version.gitVersion={{.Env.VERSION}}
-  - -X {{.Env.PACKAGE_PATH}}/version.gitTreeState={{.Git.TreeState}}
-  - -X {{.Env.PACKAGE_PATH}}/version.gitCommit={{.Git.FullCommit}}
-  - -X {{.Env.PACKAGE_PATH}}/version.buildDate={{.Date}}
-  - -X {{.Env.PACKAGE_PATH}}/version/verflag.programName={{.Env.PROGRAM_NAME}}
+  - -X k8s.io/component-base/version.gitMajor={{.Env.MAJOR_VERSION}}
+  - -X k8s.io/component-base/version.gitMinor={{.Env.MINOR_VERSION}}
+  - -X k8s.io/component-base/version.gitVersion={{.Env.VERSION}}
+  - -X k8s.io/component-base/version.gitTreeState={{.Git.TreeState}}
+  - -X k8s.io/component-base/version.gitCommit={{.Git.FullCommit}}
+  - -X k8s.io/component-base/version.buildDate={{.Date}}
+  - -X k8s.io/component-base/version/verflag.programName=gardener-landscape-kit

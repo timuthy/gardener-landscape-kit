@@ -4,11 +4,13 @@
 
 GLK_GLK             := $(TOOLS_BIN_DIR)/gardener-landscape-kit
 GLK_PRETTIFY        := $(TOOLS_BIN_DIR)/prettify
+KO                  := $(TOOLS_BIN_DIR)/ko
 
 # renovate: datasource=github-releases depName=fluxcd/flux2
 FLUX_CLI_VERSION ?= v2.7.5
 GLK_GLK_VERSION = $(shell git rev-parse HEAD)
 GLK_PRETTIFY_VERSION = $(shell git rev-parse HEAD)
+KO_VERSION = $(call version_gomod,github.com/google/ko)
 
 FLUX_CLI ?= $(TOOLS_DIR)/bin/$(SYSTEM_NAME)-$(SYSTEM_ARCH)/flux
 .PHONY: flux-cli
@@ -23,3 +25,6 @@ $(GLK_GLK): $(call tool_version_file,$(GLK_GLK),$(GLK_GLK_VERSION))
 
 $(GLK_PRETTIFY): $(call tool_version_file,$(GLK_PRETTIFY),$(GLK_PRETTIFY_VERSION))
 	GOBIN=$(abspath $(TOOLS_BIN_DIR)) go install ./hack/tools/prettify
+
+$(KO): $(call tool_version_file,$(KO),$(KO_VERSION))
+	GOBIN=$(abspath $(TOOLS_BIN_DIR)) go install github.com/google/ko

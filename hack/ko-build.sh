@@ -1,12 +1,11 @@
+#!/usr/bin/env bash
 #
 # SPDX-FileCopyrightText: SAP SE or an SAP affiliate company and Gardener contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 
-export PACKAGE_PATH="${1:-k8s.io/component-base}"
+set -e
 export VERSION_PATH="${2:-$(dirname $0)/../VERSION}"
-export PROGRAM_NAME="${3:-Gardener-Landscape-kit}"
-export VERSION_VERSIONFILE="$(cat "$VERSION_PATH")"
 export VERSION="${EFFECTIVE_VERSION:-$VERSION_VERSIONFILE}"
 
 MAJOR_VERSION=""
@@ -22,3 +21,5 @@ fi
 
 export MAJOR_VERSION=$MAJOR_VERSION
 export MINOR_VERSION=$MINOR_VERSION
+
+ko build --local --bare ./cmd/gardener-landscape-kit

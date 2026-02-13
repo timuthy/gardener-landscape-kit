@@ -12,6 +12,8 @@ ENSURE_GARDENER_MOD  := $(shell go get github.com/gardener/gardener@$$(go list -
 GARDENER_HACK_DIR    := $(shell go list -m -f "{{.Dir}}" github.com/gardener/gardener)/hack
 LD_FLAGS             := "-w $(shell bash $(GARDENER_HACK_DIR)/get-build-ld-flags.sh k8s.io/component-base $(REPO_ROOT)/VERSION $(NAME))"
 TARGET_PLATFORMS     ?= linux/$(shell go env GOARCH)
+KO_DEFAULTPLATFORMS  ?= linux/$(shell go env GOARCH)
+KO_DOCKER_REPO       := europe-docker.pkg.dev/gardener-project/snapshots/gardener/gardener-landscape-kit
 
 #########################################
 # Tools                                 #
@@ -40,6 +42,10 @@ install:
 docker-images:
 	@echo "Building docker images with version and tag $(EFFECTIVE_VERSION) for target platforms $(TARGET_PLATFORMS)"
 	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) --platform $(TARGET_PLATFORMS) -t $(IMAGE_REGISTRY):$(EFFECTIVE_VERSION) -t $(IMAGE_REGISTRY):latest -f Dockerfile --target gardener-landscape-kit .
+
+.PHONY: container-images
+container-images: $(KO)
+	@EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) REPO_ROOT=$(REPO_ROOT) KO_DEFAULTPLATFORMS=$(KO_DEFAULTPLATFORMS) KO_DOCKER_REPO=$(KO_DOCKER_REPO) bash $(HACK_DIR)/ko-build.sh
 
 .PHONY: tidy
 tidy:
