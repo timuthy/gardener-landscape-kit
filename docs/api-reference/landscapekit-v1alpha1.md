@@ -378,6 +378,15 @@ string
 </tr>
 </tbody>
 </table>
+<h3 id="landscape.config.gardener.cloud/v1alpha1.VersionCheckMode">VersionCheckMode
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscape.config.gardener.cloud/v1alpha1.VersionConfiguration">VersionConfiguration</a>)
+</p>
+<p>
+<p>VersionCheckMode controls the behavior when the tool version doesn&rsquo;t match the component version.</p>
+</p>
 <h3 id="landscape.config.gardener.cloud/v1alpha1.VersionConfiguration">VersionConfiguration
 </h3>
 <p>
@@ -408,6 +417,22 @@ DefaultVersionsUpdateStrategy
 <em>(Optional)</em>
 <p>UpdateStrategy determines whether the versions in the default vector should be updated from the release branch on resolve.
 Possible values are &ldquo;Disabled&rdquo; (default) and &ldquo;ReleaseBranch&rdquo;.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>checkMode</code></br>
+<em>
+<a href="#landscape.config.gardener.cloud/v1alpha1.VersionCheckMode">
+VersionCheckMode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CheckMode determines the behavior when the tool version doesn&rsquo;t match the gardener-landscape-kit version in the component vector.
+Possible values are &ldquo;Strict&rdquo; (default) and &ldquo;Warning&rdquo;.
+In strict mode, version mismatches cause errors. In warning mode, only warnings are logged.</p>
 </td>
 </tr>
 </tbody>
