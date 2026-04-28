@@ -228,12 +228,12 @@ server:
   # connections:
   #   example:
   #     url: https://example.com/
-  #     uuid: c9e50be9-a7c3-4aee-ba35-624c4ff8c519
-  #     token: 6634bb58be0db23cc013a2e72dd1828ae0257cf
+  #     uuid: <UUID>
+  #     token: <TOKEN>
   #     fetch_interval: 30s
   #   codeberg:
   #     url: https://codeberg.org/
-  #     uuid: f543b661-cb02-4ba2-9820-108df62808b5
+  #     uuid: <UUID>
   #     token_url: file:$CREDENTIALS_DIRECTORY/token.txt
   #     labels:
   #       - debian:docker://docker.io/library/node:lts-trixie
