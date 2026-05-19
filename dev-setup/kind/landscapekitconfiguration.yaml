@@ -14,7 +14,9 @@ git:
   paths:
     base: ./base
     landscape: ./
-# components:
-#   exclude:
-#   - component-name
+components:
+#  exclude:
+#  - gardener-operator
+  include:
+  - flux
 
