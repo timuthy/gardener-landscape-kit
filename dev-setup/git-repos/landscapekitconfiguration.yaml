@@ -14,6 +14,9 @@ git:
   paths:
     base: ./base
     landscape: ./
+# TODO(timothy): Remove this config once dev versions are ignored.
+versionConfig:
+  checkMode: Warning
 components:
 #  exclude:
 #  - gardener-operator
