@@ -14,7 +14,7 @@ git:
   paths:
     base: ./base
     landscape: ./
-# TODO(timothy): Remove this config once dev versions are ignored.
+# TODO(timuthy): Remove this config once dev versions are ignored.
 versionConfig:
   checkMode: Warning
 components:
