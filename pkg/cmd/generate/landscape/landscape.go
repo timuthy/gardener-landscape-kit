@@ -16,7 +16,6 @@ import (
 	"github.com/gardener/gardener-landscape-kit/pkg/cmd/generate/options"
 	"github.com/gardener/gardener-landscape-kit/pkg/components"
 	"github.com/gardener/gardener-landscape-kit/pkg/registry"
-	"github.com/gardener/gardener-landscape-kit/pkg/utils/files"
 	"github.com/gardener/gardener-landscape-kit/pkg/utils/kustomization"
 	"github.com/gardener/gardener-landscape-kit/pkg/utils/version"
 )
@@ -26,7 +25,7 @@ func NewCommand(globalOpts *cmd.Options) *cobra.Command {
 	opts := &options.Options{Options: globalOpts}
 
 	cmd := &cobra.Command{
-		Use:     "landscape (-c CONFIG_FILE) TARGET_DIR",
+		Use:     "landscape (-c CONFIG_FILE) LANDSCAPE_REPO_ROOT",
 		Short:   "Generate or update landscape specific directories",
 		Example: "gardener-landscape-kit generate landscape -c ./example/20-componentconfig-glk.yaml ./",
 		Args:    cobra.ExactArgs(1),
@@ -34,6 +33,8 @@ func NewCommand(globalOpts *cmd.Options) *cobra.Command {
 			if err := opts.Complete(args); err != nil {
 				return err
 			}
+
+			options.WarnIfTargetNotRepoRoot(opts.TargetDirPath, afero.Afero{Fs: afero.NewOsFs()}, opts.Log)
 
 			// general config validation
 			if err := opts.Validate(); err != nil {
@@ -54,15 +55,17 @@ func NewCommand(globalOpts *cmd.Options) *cobra.Command {
 }
 
 func validate(opts *options.Options) error {
-	if opts.Config.Git == nil {
-		return fmt.Errorf("git config is required")
+	if opts.Config.Repositories.Landscape == nil {
+		return fmt.Errorf("repositories.landscape config is required")
 	}
+	landscape := opts.Config.Repositories.Landscape
 
-	// Calculate the path to the base directory from the landscape directory
-	relPathToRoot := files.RelativePathFromDirDepth(opts.Config.Git.Paths.Landscape)
-	pathToBase := filepath.Join(opts.TargetDirPath, relPathToRoot, opts.Config.Git.Paths.Base)
+	// opts.TargetDirPath is the on-disk landscape repository root.
+	// landscape.BaseLink is the landscape-side path to the base content.
+	pathToBase := filepath.Join(opts.TargetDirPath, landscape.BaseLink)
 
 	// Validate version compatibility
+	opts.Log.V(1).Info("Validating version compatibility", "pathToBase", pathToBase)
 	fs := afero.Afero{Fs: afero.NewOsFs()}
 	if err := version.ValidateLandscapeVersionCompatibility(pathToBase, fs); err != nil {
 		return fmt.Errorf("version compatibility check failed: %w", err)

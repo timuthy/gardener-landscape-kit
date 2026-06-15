@@ -21,11 +21,35 @@ func SetDefaults_LandscapeKitConfiguration(obj *LandscapeKitConfiguration) {
 	if obj.MergeMode == nil {
 		obj.MergeMode = new(MergeModeHint)
 	}
+
+	// Default Repositories and Base to empty objects so the per-field defaulters below populate Target = "./".
+	// This makes `glk generate base` usable with a minimal config.
+	// `glk generate landscape` still requires `repositories.landscape` to be set explicitly (enforced by validation).
+	if obj.Repositories == nil {
+		obj.Repositories = &RepositoriesConfig{}
+	}
+	if obj.Repositories.Base == nil {
+		obj.Repositories.Base = &BaseRepositoryConfig{}
+	}
 }
 
 // SetDefaults_OCMConfig sets defaults for OCMConfig.
 func SetDefaults_OCMConfig(obj *OCMConfig) {
 	if obj.IgnoreMissingComponents == nil {
 		obj.IgnoreMissingComponents = new(false)
+	}
+}
+
+// SetDefaults_BaseRepositoryConfig sets defaults for BaseRepositoryConfig.
+func SetDefaults_BaseRepositoryConfig(obj *BaseRepositoryConfig) {
+	if obj.Target == "" {
+		obj.Target = "./"
+	}
+}
+
+// SetDefaults_LandscapeRepositoryConfig sets defaults for LandscapeRepositoryConfig.
+func SetDefaults_LandscapeRepositoryConfig(obj *LandscapeRepositoryConfig) {
+	if obj.Target == "" {
+		obj.Target = "./"
 	}
 }

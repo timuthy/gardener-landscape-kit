@@ -43,22 +43,31 @@ Generating the base repository is as simple as providing the path to the base re
 glk generate base -c config-file /path/to/base-repo
 ```
 
-Whereas the generation of the landscape repositories requires the config to contain base and landscape paths, relative to the repository:
+The generation of the landscape repositories requires the config to describe both the base and landscape repository.
+For each repository, every path is interpreted relative to *its own* repository root:
 
 ```yaml
 apiVersion: landscape.config.gardener.cloud/v1alpha1
 kind: LandscapeKitConfiguration
-git:
-  url: https://github.tools.sap/d066080/test-landscape-dev
-  ref:
-    branch: main
-  paths:
-    base: ./base
-    landscape: ./
+repositories:
+  base:
+    target: ./
+  landscape:
+    url: https://github.com/gardener-community/test-landscape
+    ref:
+      branch: main
+    baseLink: ./base
+    target: ./
 ```
 
 ```bash
 glk generate landscape -c config-file /path/to/landscape-repo
 ```
 
-In the example above, the landscape repository is located in `/path/to/landscape-repo` and the base repository is in a subdirectory `/path/to/landscape-repo/base` of the landscape repository.
+The fields are anchored as follows:
+- `repositories.base.target` is the directory inside the **base** repository that holds the generated base content (the output of `glk generate base`). It is used only by `glk generate base`. **Default:** `./` (the base content lives at the repository root).
+- `repositories.landscape.url` and `repositories.landscape.ref` identify the **landscape** Git repository and the ref to check out.
+- `repositories.landscape.target` is the directory inside the **landscape** repository that holds the landscape configuration (e.g. `./` when the landscape lives at the repo root, or `./landscapes/first` when multiple landscapes share one repo). **Default:** `./`.
+- `repositories.landscape.baseLink` is the path inside the **landscape** repository that points directly at the base content (the parent of `components/`). In a [submodule setup](#separate-repositories-submodule--recommended) this is the submodule mount point joined with the in-base-repo subpath (e.g. submodule mounted at `./base` with base content at `./config` inside the base repo gives `baseLink: ./base/config`); in a [monorepo setup](#monorepo) it is the in-tree directory holding the base content. It is the explicit cross-repo glue that tells GLK how to reach base content from within the landscape repo. `baseLink` and `base.target` are intentionally not joined. `baseLink` carries the full landscape-side path so the relationship is explicit and one-directional.
+
+In the example above, the landscape repository is checked out at `/path/to/landscape-repo`, the landscape configuration sits at the repository root (`target: ./`), and the base repository's content is reachable from within the landscape repo at `./base` (`baseLink: ./base`) — either as a Git submodule or as an in-tree subdirectory, depending on the chosen [organization](#organization). `base.target: ./` declares that the base content lives at the root of the base repository, so when the base repo is mounted at `./base`, that mount point already *is* the base content directory.

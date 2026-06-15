@@ -8,7 +8,11 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
+	"github.com/go-logr/logr"
+	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -76,4 +80,42 @@ func (o *Options) Complete(args []string) error {
 // AddFlags adds flags for the options to the given FlagSet.
 func (o *Options) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVarP(&o.ConfigFilePath, "config", "c", o.ConfigFilePath, "Path to configuration file.")
+}
+
+// WarnIfTargetNotRepoRoot logs a warning if TargetDirPath looks like an inner directory of a repository
+// rather than the repository root itself: it contains ordinary subdirectories (suggesting a populated tree)
+// but no `.git` subdirectory.
+// Empty or near-empty targets. Only files (e.g. a config file) or hidden entries (`.DS_Store`, etc.) are skipped
+// to support bootstrapping into a fresh location.
+// As of the `repositories:` config migration, generate commands expect the *repository root*, not the inner content directory.
+// This catches users still passing the old-style inner path.
+//
+// TODO(LucaBernstein): remove a few releases after the `repositories:` config rollout.
+func WarnIfTargetNotRepoRoot(targetDirPath string, fs afero.Afero, log logr.Logger) {
+	if hasGit, err := fs.DirExists(filepath.Join(targetDirPath, ".git")); err != nil || hasGit {
+		return
+	}
+	entries, err := fs.ReadDir(targetDirPath)
+	if err != nil {
+		return
+	}
+	hasOrdinarySubdir := false
+	for _, e := range entries {
+		if e.IsDir() && !strings.HasPrefix(e.Name(), ".") {
+			hasOrdinarySubdir = true
+			break
+		}
+	}
+	if !hasOrdinarySubdir {
+		// Empty, file-only, or only-hidden-entries target. Likely bootstrap; nothing to warn about.
+		return
+	}
+
+	log.Info(
+		"WARNING: target directory does not look like a git repository root (no .git directory found). "+
+			"As of the `repositories:` config migration, `generate base` and `generate landscape` expect the repository root, "+
+			"not the inner content directory. The content sub-paths are now taken from `repositories.base.target` and "+
+			"`repositories.landscape.target` in the config. If this directory is intentionally not a git repo yet, ignore this warning.",
+		"targetDirPath", targetDirPath,
+	)
 }
