@@ -1,26 +1,12 @@
 name: github.com/gardener/gardener-landscape-kit
 main-source:
   labels:
-  - name: cloud.gardener.cnudie/dso/scanning-hints/source_analysis/v1
-    value:
-      policy: skip
-      comment: |
-        we use gosec for sast scanning. See attached log.
+    - name: cloud.gardener.cnudie/dso/scanning-hints/source_analysis/v1
+      value:
+        policy: skip
+        comment: |
+          we use gosec for sast scanning. See attached log.
 resources:
-  - name: source-controller
-    version: v1.8.5
-    type: ociImage
-    relation: external
-    access:
-      type: ociRegistry
-      imageReference: ghcr.io/fluxcd/source-controller:v1.8.5
-  - name: kustomize-controller
-    version: v1.8.5
-    type: ociImage
-    relation: external
-    access:
-      type: ociRegistry
-      imageReference: ghcr.io/fluxcd/kustomize-controller:v1.8.5
   - name: helm-controller
     version: v1.5.5
     type: ociImage
@@ -28,6 +14,13 @@ resources:
     access:
       type: ociRegistry
       imageReference: ghcr.io/fluxcd/helm-controller:v1.5.5
+  - name: kustomize-controller
+    version: v1.8.5
+    type: ociImage
+    relation: external
+    access:
+      type: ociRegistry
+      imageReference: ghcr.io/fluxcd/kustomize-controller:v1.8.5
   - name: notification-controller
     version: v1.8.4
     type: ociImage
@@ -35,3 +28,10 @@ resources:
     access:
       type: ociRegistry
       imageReference: ghcr.io/fluxcd/notification-controller:v1.8.4
+  - name: source-controller
+    version: v1.8.5
+    type: ociImage
+    relation: external
+    access:
+      type: ociRegistry
+      imageReference: ghcr.io/fluxcd/source-controller:v1.8.5

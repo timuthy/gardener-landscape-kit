@@ -41,59 +41,43 @@ sed -i 's|branch\:\s<branch>|{{ .repo_ref }}|g' $REPO_ROOT/pkg/components/flux/t
 sed -i -e 's/recurseSubmodules: true/recurseSubmodules: true # required if Git submodules are used, e.g. to include the base repo in the landscape repo./g' \
   $REPO_ROOT/pkg/components/flux/templates/landscape/flux-system/gotk-sync.yaml
 
-## Extract controller images from gotk-components.yaml and update componentvector/components.yaml
-echo "> Updating Flux controller images in componentvector/components.yaml"
-
 GOTK=$REPO_ROOT/pkg/components/flux/templates/landscape/flux-system/gotk-components.yaml
 COMPONENTS=$REPO_ROOT/componentvector/components.yaml
+OCM_BASE_COMPONENT=$REPO_ROOT/.ocm/base-component.yaml
 
-extract_image() {
-  grep -oP "(?<=image: )ghcr\.io/fluxcd/${1}:[^\s]+" "$GOTK" | head -1
+# Convert a hyphenated controller name to camelCase key, e.g. "source-controller" -> "sourceController"
+to_camel_case() {
+  echo "$1" | sed -E 's/-([a-z])/\U\1/g'
 }
-
-SOURCE_IMAGE=$(extract_image "source-controller")
-KUSTOMIZE_IMAGE=$(extract_image "kustomize-controller")
-HELM_IMAGE=$(extract_image "helm-controller")
-NOTIFICATION_IMAGE=$(extract_image "notification-controller")
 
 GLK_INDEX=$(yq '.components | to_entries | .[] | select(.value.name == "github.com/gardener/gardener-landscape-kit") | .key' "$COMPONENTS")
 
-update_resource() {
-  local resource_key=$1
-  local image=$2
-  local repo="${image%:*}"
-  local tag="${image##*:}"
-  yq -i ".components[${GLK_INDEX}].resources.${resource_key}.ociImage.repository = \"${repo}\"" "$COMPONENTS"
-  yq -i ".components[${GLK_INDEX}].resources.${resource_key}.ociImage.tag = \"${tag}\"" "$COMPONENTS"
-}
+## Extract all Flux controller images from gotk-components.yaml and update downstream files
+echo "> Updating Flux controller images in componentvector/components.yaml and .ocm/base-component.yaml"
 
-update_resource "sourceController" "$SOURCE_IMAGE"
-update_resource "kustomizeController" "$KUSTOMIZE_IMAGE"
-update_resource "helmController" "$HELM_IMAGE"
-update_resource "notificationController" "$NOTIFICATION_IMAGE"
+# Clear existing Flux controller resources so stale entries don't accumulate.
+GLK_INDEX=$GLK_INDEX yq -i '.components[env(GLK_INDEX)].resources = {}' "$COMPONENTS"
+ocm_resources_file=$(mktemp)
+echo "[]" > "$ocm_resources_file"
 
-## Update Flux controller images in .ocm/base-component.yaml
-echo "> Updating Flux controller images in .ocm/base-component.yaml"
+while IFS= read -r image; do
+  # image is e.g. "ghcr.io/fluxcd/source-controller:v1.8.5"
+  controller="${image#ghcr.io/fluxcd/}"   # "source-controller:v1.8.5"
+  controller="${controller%%:*}"           # "source-controller"
+  tag="${image##*:}"                       # "v1.8.5"
+  repo="${image%:*}"                       # "ghcr.io/fluxcd/source-controller"
+  resource_key=$(to_camel_case "$controller")
 
-BASE_COMPONENT=$REPO_ROOT/.ocm/base-component.yaml
+  GLK_INDEX=$GLK_INDEX resource_key=$resource_key repo=$repo tag=$tag \
+    yq -i '.components[env(GLK_INDEX)].resources[env(resource_key)].ociImage.repository = env(repo) |
+           .components[env(GLK_INDEX)].resources[env(resource_key)].ociImage.tag = env(tag)' "$COMPONENTS"
 
-update_ocm_resource() {
-  local name=$1
-  local image=$2
-  local tag="${image##*:}"
-  yq -i "(.resources[] | select(.name == \"${name}\") | .version) = \"${tag}\"" "$BASE_COMPONENT"
-  yq -i "(.resources[] | select(.name == \"${name}\") | .access.imageReference) = \"${image}\"" "$BASE_COMPONENT"
-}
+  controller=$controller tag=$tag image=$image \
+    yq -i '. += [{"name": env(controller), "version": env(tag), "type": "ociImage", "relation": "external", "access": {"type": "ociRegistry", "imageReference": env(image)}}]' \
+    "$ocm_resources_file"
 
-update_ocm_resource "source-controller" "$SOURCE_IMAGE"
-update_ocm_resource "kustomize-controller" "$KUSTOMIZE_IMAGE"
-update_ocm_resource "helm-controller" "$HELM_IMAGE"
-update_ocm_resource "notification-controller" "$NOTIFICATION_IMAGE"
+  sed -i "s|image: ${image}|image: {{ .resources.${resource_key}.ociImage.ref }}|g" "$GOTK"
+done < <(grep -oP "(?<=image: )ghcr\.io/fluxcd/[^\s]+" "$GOTK" | sort -u)
 
-## Replace actual images in gotk-components.yaml with template placeholders
-echo "> Replacing images in gotk-components.yaml with template placeholders"
-
-sed -i "s|image: ${SOURCE_IMAGE}|image: {{ .resources.sourceController.ociImage.ref }}|g" "$GOTK"
-sed -i "s|image: ${KUSTOMIZE_IMAGE}|image: {{ .resources.kustomizeController.ociImage.ref }}|g" "$GOTK"
-sed -i "s|image: ${HELM_IMAGE}|image: {{ .resources.helmController.ociImage.ref }}|g" "$GOTK"
-sed -i "s|image: ${NOTIFICATION_IMAGE}|image: {{ .resources.notificationController.ociImage.ref }}|g" "$GOTK"
+resources_file=$ocm_resources_file yq -i '.resources = load(env(resources_file))' "$OCM_BASE_COMPONENT"
+rm "$ocm_resources_file"
