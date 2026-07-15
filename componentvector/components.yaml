@@ -3,6 +3,10 @@ components:
   sourceRepository: https://github.com/gardener/gardener-landscape-kit
   version: v0.3.0-dev
   resources:
+    fluxCLI:
+      ociImage:
+        repository: ghcr.io/fluxcd/flux-cli
+        tag: v2.8.8
     helmController:
       ociImage:
         repository: ghcr.io/fluxcd/helm-controller
